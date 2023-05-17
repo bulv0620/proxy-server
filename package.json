@@ -1,0 +1,41 @@
+{
+  "name": "proxy-server",
+  "version": "0.1.0",
+  "description": "api proxy",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --x64"
+  },
+  "author": "bulv<bulv0620@163.com>",
+  "build": {
+    "productName": "proxy-server",
+    "appId": "cloud.imbulv",
+    "copyright": "2023 bulv",
+    "compression": "store",
+    "directories": {
+      "output": "build"
+    },
+    "asar": false,
+    "win": {
+      "icon": "favicon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "proxy-server"
+    }
+  },
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "http-proxy-middleware": "^2.0.6"
+  },
+  "devDependencies": {
+    "electron": "^24.3.0",
+    "electron-builder": "^23.6.0"
+  }
+}

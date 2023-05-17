@@ -1,10 +1,11 @@
 const { app, BrowserWindow, Menu, ipcMain, Tray } = require("electron");
 const path = require("path");
 const express = require("express");
-const cors = require('cors')
+const cors = require("cors");
 const proxy = require("http-proxy-middleware").createProxyMiddleware;
 
 Menu.setApplicationMenu(null);
+let serverInstance;
 
 app.whenReady().then(() => {
   const win = new BrowserWindow({
@@ -23,14 +24,30 @@ app.whenReady().then(() => {
 
   win.once("ready-to-show", () => {
     win.show();
+
+    const server = express();
+    server.use(cors());
+    server.use(
+      "/",
+      proxy(`/productScan`, { target: `http://localhost:55555/productScan` })
+    );
+    serverInstance = server.listen(3000, () => {
+      win.webContents.send("ready", 0);
+    });
   });
 
-  const server = express();
-  server.use(cors())
-  server.use("/", proxy(`/productScan`, { target: `http://localhost:55555/productScan` }));
-  const serverInstance = server.listen(3000, () => {
-    win.webContents.send("ready", 0);
-  });
+  const gotTheLock = app.requestSingleInstanceLock();
+  if (!gotTheLock) {
+    app.quit();
+  } else {
+    app.on("second-instance", (event, commandLine, workingDirectory) => {
+      // 当运行第二个实例时,将会聚焦到mainWindow这个窗口
+      if (win) {
+        win.focus();
+        win.show();
+      }
+    });
+  }
 
   ipcMain.on("hide", () => {
     win.hide();

@@ -6,9 +6,10 @@ const proxy = require("http-proxy-middleware").createProxyMiddleware;
 
 Menu.setApplicationMenu(null);
 let serverInstance;
+let win;
 
 app.whenReady().then(() => {
-  const win = new BrowserWindow({
+  win = new BrowserWindow({
     width: 300,
     height: 200,
     show: false,
@@ -24,16 +25,6 @@ app.whenReady().then(() => {
 
   win.once("ready-to-show", () => {
     win.show();
-
-    const server = express();
-    server.use(cors());
-    server.use(
-      "/",
-      proxy(`/productScan`, { target: `http://localhost:55555/productScan` })
-    );
-    serverInstance = server.listen(3000, () => {
-      win.webContents.send("ready", 0);
-    });
   });
 
   const gotTheLock = app.requestSingleInstanceLock();
@@ -53,6 +44,28 @@ app.whenReady().then(() => {
     win.hide();
   });
 
+  ipcMain.on('open', (e, data) => {
+    try {
+      const server = express();
+      server.use(cors());
+      server.use(
+        "/",
+        proxy(data.api, { target: data.target })
+      );
+      serverInstance = server.listen(data.port, () => {
+        win.webContents.send("ready", 0);
+      });
+    } catch (error) {
+      win.webContents.send("error", '启动失败');
+    }
+  });
+
+  ipcMain.on('close', () => {
+    serverInstance.close();
+    serverInstance = null
+    win.webContents.send("reset");
+  })
+
   const tray = new Tray(path.resolve(__dirname, "./favicon.ico"));
   const contextMenu = Menu.buildFromTemplate([
     {
@@ -64,7 +77,6 @@ app.whenReady().then(() => {
     {
       label: "关闭",
       click: () => {
-        serverInstance.close();
         app.quit();
       },
     },
